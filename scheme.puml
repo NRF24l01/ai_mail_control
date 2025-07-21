@@ -3,13 +3,14 @@
 !include ./icons/go.puml
 !include ./icons/vuejs.puml
 !include ./icons/email.puml
+!include ./icons/robot.puml
 
 ' Участники с иконками
 participant Фронтэнд as Vue <<$vuejs>> #3fb984
 participant Telegram <<$telegram>> #0088cc
 participant Почта <<$email>> #dddddd
 participant Бекенд as GoBackend <<$go>> #00acd7
-participant Воркер
+participant Воркер <<$robot>> #dddddd
 
 Почта -> GoBackend: приходит письмо
 GoBackend -> Воркер: распознай письмо
