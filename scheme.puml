@@ -1,0 +1,21 @@
+@startuml ai_mail_controller
+!include ./icons/telegram.puml
+!include ./icons/go.puml
+!include ./icons/vuejs.puml
+!include ./icons/email.puml
+
+' Участники с иконками
+participant Фронтэнд as Vue <<$vuejs>> #3fb984
+participant Telegram <<$telegram>> #0088cc
+participant Почта <<$email>> #dddddd
+participant Бекенд as GoBackend <<$go>> #00acd7
+participant Воркер
+
+Почта -> GoBackend: приходит письмо
+GoBackend -> Воркер: распознай письмо
+Воркер -> GoBackend: Письмо - перепутали/стандартно/думать надо
+GoBackend -> Telegram: Отправляет уведомление через бота
+Vue -> GoBackend: Запрашивает письма и сортирует по темам
+Vue -> GoBackend: Выбраное действие с письмом, те как ответить
+GoBackend -> Почта
+@enduml
