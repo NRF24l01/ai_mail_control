@@ -1,5 +1,5 @@
 # AI mail controller
-![scheme](plantuml_generated/ai_mail_controller.svg)
+
 
 ## Элементы системы:
 **Почта воркер**
