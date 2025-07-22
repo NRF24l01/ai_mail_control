@@ -1,0 +1,50 @@
+networks:
+  fastapi-mail-backend-net:
+    driver: bridge
+
+volumes:
+  app:
+  pgdata:
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    env_file:
+      - ../.env
+    expose:
+      - "5432"
+    environment:
+      DB_LOGIN: postgres
+      DB_PASSWORD: password
+      DB_DATABASE: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - fastapi-mail-backend-net
+
+  backend:
+    build:
+      context: ../
+      dockerfile: mail_backend/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ../.env
+    environment:
+      - DB_HOST=db
+      - DB_LOGIN=postgres
+      - DB_PASSWORD=password
+      - DB_DATABASE=postgres
+      - PROD_MODE=true
+    ports:
+      - "8000:8000"
+    networks:
+      - fastapi-mail-backend-net

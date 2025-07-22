@@ -1,7 +1,9 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+if os.getenv("PROD_MODE", "") != "true":
+    load_dotenv()
+
 
 DB_LOGIN=os.getenv("DB_LOGIN")
 DB_PASSWORD=os.getenv("DB_PASSWORD")
