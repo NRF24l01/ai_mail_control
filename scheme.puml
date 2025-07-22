@@ -12,11 +12,14 @@ participant Почта <<$email>> #dddddd
 participant Бекенд as GoBackend <<$go>> #00acd7
 participant Воркер <<$robot>> #dddddd
 
-Почта -> GoBackend: приходит письмо
-GoBackend -> Воркер: распознай письмо
-Воркер -> GoBackend: Письмо - перепутали/стандартно/думать надо
-GoBackend -> Telegram: Отправляет уведомление через бота
-Vue -> GoBackend: Запрашивает письма и сортирует по темам
+database DB
+
+Почта -> Worker: СОхраняет новые
+Worker -> Почта: Отправляет те что нужно отправить
+Worker <-> DB: Сохраняет письмо
+DB <-> Воркер: распознаёт письмо
+DB -> Telegram: Отправляет уведомление через бота
+Vue <- GoBackend: Какие есть письма
 Vue -> GoBackend: Выбраное действие с письмом, те как ответить
-GoBackend -> Почта: Отправка письма
+GoBackend -> DB: Нужно отправить письмо
 @enduml
