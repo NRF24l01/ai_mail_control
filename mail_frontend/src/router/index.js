@@ -16,7 +16,7 @@ const router = createRouter({
     {
       path: '/dialogs',
       name: 'dialogs',
-      component: () => import('../views/Home.vue'),
+      component: () => import('../views/Dialogs.vue'),
     },
     {
       path: '/about',
