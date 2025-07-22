@@ -1,6 +1,10 @@
 import asyncio
 from aerich import Command
 from .tortoise_config import TORTOISE_ORM
+from tortoise import Tortoise
+
+async def init_db():
+    await Tortoise.init(config=TORTOISE_ORM)
 
 async def run_migrations():
     command = Command(tortoise_config=TORTOISE_ORM, app="models", location="migrations")
