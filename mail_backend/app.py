@@ -26,6 +26,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/ping")
+async def ping():
+    return {"message": "Mailer backend is running!"}
 
 @app.get("/senders")
 async def get_senders():
