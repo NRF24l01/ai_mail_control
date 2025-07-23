@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.expressions import Q
 from models.mail import Mail
@@ -6,8 +7,25 @@ from config import POSTGRES_STR
 from models.migrate import run_migrations
 import uvicorn
 import asyncio
+import os
 
 app = FastAPI()
+
+# CORS setup
+cors_mode = os.getenv("CORS_MODE", "")
+if cors_mode == "prod":
+    origins = ["https://mail.telepat.online"]
+else:
+    origins = ["http://localhost:5137"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/senders")
 async def get_senders():
