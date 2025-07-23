@@ -256,15 +256,13 @@ async function fakeFetchDialogs() {
                         return Promise.reject(new Error('Network error'))
                 }
                 const data = await response.json()
-                // data.senders is an array of emails
-                // Add fake dialog data for each sender
-                const now = Date.now()
-                const dialogs = data.senders.map((email, idx) => ({
-                        id: idx + 1,
-                        email,
-                        unreadCount: Math.floor(Math.random() * 6), // 0-5
-                        lastMessage: 'This is a fake last message for ' + email,
-                        lastMessageDate: new Date(now - 1000 * 60 * (idx + 1) * 10) // spaced by 10min
+                // data.senders is an array of objects: { uuid, email, unreadCount, lastMessage, lastMessageDate }
+                const dialogs = data.senders.map((sender, idx) => ({
+                        id: sender.uuid || (idx + 1),
+                        email: sender.email,
+                        unreadCount: sender.unreadCount,
+                        lastMessage: sender.lastMessage,
+                        lastMessageDate: sender.lastMessageDate
                 }))
                 return dialogs
         } catch (err) {

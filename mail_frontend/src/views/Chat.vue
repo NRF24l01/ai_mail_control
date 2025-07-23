@@ -6,7 +6,7 @@
                 <i class="fas fa-arrow-left hover:scale-110 transition-transform"></i>
             </router-link>
             <div class="flex flex-col ml-3">
-                <div class="text-xl font-bold">{{ otherEmail || '...' }}</div>
+                <div class="text-xl font-bold">{{ chatId || '...' }}</div>
             </div>
         </div>
 
@@ -38,6 +38,9 @@
                                     : 'bg-gray-200 text-gray-900 rounded-tl-none'
                             ]"
                         >
+                            <div class="font-semibold text-sm mb-1" v-if="msg.subject">
+                                {{ msg.subject }}
+                            </div>
                             {{ msg.text }}
                             <div class="text-xs mt-1 opacity-70 flex items-center gap-1" 
                                  :class="msg.from === 'me' ? 'text-blue-100' : 'text-gray-500'">
@@ -78,7 +81,6 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const chatId = ref(route.params.chatId)
-const otherEmail = ref('')
 const isLoading = ref(true)
 const messages = ref([])
 const user = ref({})
@@ -86,42 +88,39 @@ const newMessage = ref('')
 const messagesContainer = ref(null)
 const isSending = ref(false)
 
-async function simulateApiCall(data, delay = 1000) {
-    return new Promise(resolve => {
-        setTimeout(() => resolve(data), delay)
-    })
-}
-
-async function fetchOtherEmail(chatId) {
-    const result = await simulateApiCall('contact@example.com')
-    return result
-}
-
-function fetchMessages(chatId) {
-    return simulateApiCall([
-        { id: 1, from: 'other', text: 'Привет!', time: '2024-06-01T10:00:00', read: true },
-        { id: 2, from: 'me', text: 'Здравствуй! Как дела?', time: '2024-06-01T10:01:00', read: true },
-        { id: 3, from: 'other', text: 'Отлично, спасибо! Работаю над новым проектом.', time: '2024-06-01T10:02:00', read: true },
-        { id: 4, from: 'me', text: 'Интересно! Расскажи подробнее.', time: '2024-06-01T10:03:00', read: true },
-        { id: 5, from: 'other', text: 'Это чат-приложение с множеством функций.', time: '2024-06-01T10:04:00', read: true },
-        { id: 6, from: 'other', text: 'Хочу добавить поддержку аудио и видео звонков.', time: '2024-06-01T10:04:30', read: true },
-        { id: 7, from: 'me', text: 'Звучит здорово! Когда планируешь закончить?', time: '2024-06-01T10:05:00', read: false }
-    ])
+async function fetchMessages(chatId) {
+    const url = `${import.meta.env.VITE_BACKEND_URL}/chat/${chatId}`
+    try {
+        const response = await fetch(url)
+        if (!response.ok) throw new Error('Ошибка загрузки сообщений')
+        const data = await response.json()
+        // Преобразуем данные из MailResponse к формату сообщений чата
+        return data.chat.map((mail, idx) => ({
+            id: mail.message_id || idx,
+            from: mail.type === "INBOX" ? 'other' : 'me',
+            subject: mail.subject || 'Без темы',
+            text: mail.body,
+            time: mail.date,
+            read: true // Можно добавить логику для read, если появится
+        }))
+    } catch (error) {
+        console.error('Ошибка запроса чата:', error)
+        return []
+    }
 }
 
 function fetchUser() {
-    return simulateApiCall({
-        email: 'user@example.com',
+    return {
+        email: chatId.value,
         fullName: 'Иванов Иван Иванович',
         phone: '+7 999 123-45-67'
-    })
+    }
 }
 
 onMounted(async () => {
     try {
         messages.value = await fetchMessages(chatId.value)
         user.value = await fetchUser()
-        otherEmail.value = await fetchOtherEmail(chatId.value)
         isLoading.value = false
         
         await nextTick()
