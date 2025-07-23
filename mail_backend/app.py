@@ -8,6 +8,7 @@ from models.migrate import run_migrations
 import uvicorn
 import asyncio
 import os
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime

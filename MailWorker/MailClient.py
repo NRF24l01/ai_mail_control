@@ -11,6 +11,8 @@ from collections import defaultdict
 import threading
 from manage import redis_client
 from config import MAIL_HOST, MAIL_USER, MAIL_PASSWORD
+import socket
+import subprocess
 
 class MailClient:
     def __init__(self, host, user, password, redis_client, max_workers=15, output_dir="emails"):
@@ -137,20 +139,59 @@ class MailClient:
         with open(os.path.join(self.output_dir, "errors.log"), "a", encoding="utf-8") as f:
             f.write(f"[{context}] {error_msg}\n")
 
-    def is_spam(self, msg):
-        """
-        Проверяет письмо на спам по простым признакам:
-        - наличие заголовка 'X-Spam-Flag: YES'
-        - наличие слова 'spam' в теме (без учета регистра)
-        Можно расширить по необходимости.
-        """
-        spam_flag = msg.get('X-Spam-Flag', '').lower()
-        subject = self._decode_header(msg.get('Subject', '')).lower()
-        if spam_flag == 'yes':
-            return True
-        if 'spam' in subject:
-            return True
-        return False
+    # def is_spam(self, msg):
+    #     """
+    #     Проверяет письмо на спам по простым признакам:
+    #     - наличие заголовка 'X-Spam-Flag: YES'
+    #     - наличие слова 'spam' в теме (без учета регистра)
+    #     Можно расширить по необходимости.
+    #     """
+    #     spam_flag = msg.get('X-Spam-Flag', '').lower()
+    #     subject = self._decode_header(msg.get('Subject', '')).lower()
+    #     if spam_flag == 'yes':
+    #         return True
+    #     if 'spam' in subject:
+    #         return True
+    #     return False
+
+
+    def is_spam(self, raw_email: str, host='localhost', port=783) -> bool:
+        try:
+            # Кодируем письмо в байты
+            raw_email_bytes = raw_email.encode('utf-8')
+            content_length = len(raw_email_bytes)
+
+            # Формируем байтовый запрос
+            request_headers = (
+                f"SYMBOLS SPAMC/1.5\r\n"
+                f"Content-length: {content_length}\r\n"
+                f"\r\n"
+            ).encode('utf-8')
+
+            request = request_headers + raw_email_bytes
+
+            with socket.create_connection((host, port), timeout=5) as sock:
+                sock.sendall(request)
+
+                response = b""
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    response += chunk
+
+            decoded = response.decode("utf-8", errors="ignore")
+            is_spam = "Spam: True" in decoded
+            print(f"[SpamAssassin] Raw Headers:\n{decoded.splitlines()[:10]}")
+            return is_spam
+        except Exception as e:
+            print(f"Ошибка при проверке спама: {e}")
+            return False
+
+        except Exception as e:
+            print(f"[ERROR] SpamAssassin check failed: {e}")
+            return False
+
 
     def fetch_threads(self):
         folders = ["INBOX", "Sent", "Отправленные", "[Gmail]/Sent Mail"]

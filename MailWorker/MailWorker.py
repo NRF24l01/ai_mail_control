@@ -1,7 +1,7 @@
 import logging
 from tqdm import tqdm
 import asyncio
-from config import MAIL_HOST, MAIL_USER, MAIL_PASSWORD
+from config import MAIL_HOST, MAIL_USER, MAIL_PASSWORD, DB_PASSWORD
 
 
 class MailWorker:
@@ -28,16 +28,21 @@ class MailWorker:
 
     async def run(self):
         try:
-            from models import run_migrations
+            print(DB_PASSWORD)
+            from models import run_migrations, init_db
+            await init_db()
             await run_migrations()
+            self.logger.info(1)
+
             await self.fetch_and_store_new_emails()
         except Exception as e:
             self.logger.critical(f"Критическая ошибка в работе MailWorker: {e}")
 
 
 if __name__ == "__main__":
-    from MailClient import MailClient
+    from MailWorker.MailClient import MailClient
     from manage import redis_client, db_client
+
 
     mail_client = MailClient(
         host=MAIL_HOST,
