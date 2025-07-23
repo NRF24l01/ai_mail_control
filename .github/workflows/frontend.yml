@@ -29,7 +29,9 @@ jobs:
         run: echo "REPO_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Собираем Docker-образ
-        run: docker build -f mail_frontend/Dockerfile -t ghcr.io/${{ env.REPO_NAME }}/mail-frontend mail_frontend/
+        run: docker build -f mail_frontend/Dockerfile \
+          --build-arg VITE_BACKEND_URL=http://127.0.0.1:8000 \
+          -t ghcr.io/${{ env.REPO_NAME }}/mail-frontend mail_frontend/ 
 
-      - name: Пушим образ в GHCR
+      - name: Пушим образ в GHCR      
         run: docker push ghcr.io/${{ env.REPO_NAME }}/mail-frontend
