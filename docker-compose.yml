@@ -47,6 +47,7 @@ services:
       MAIL_HOST: ${MAIL_HOST}
       MAIL_USER: ${MAIL_USER}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+      REDIS_HOST: redis
     networks:
       - ai_mail_net
 
