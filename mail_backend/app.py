@@ -44,8 +44,15 @@ class MailResponse(BaseModel):
 class ChatResponse(BaseModel):
     chat: List[MailResponse]
 
+class SenderInfo(BaseModel):
+    uuid: str
+    email: str
+    unreadCount: int
+    lastMessage: Optional[str]
+    lastMessageDate: Optional[datetime]
+
 class SendersResponse(BaseModel):
-    senders: List[str]
+    senders: List[SenderInfo]
 
 class PingResponse(BaseModel):
     message: str
@@ -56,9 +63,50 @@ async def ping():
 
 @app.get("/senders", response_model=SendersResponse)
 async def get_senders():
+    # Get all unique senders
     senders = await Mail.filter().distinct().values_list("from_user", flat=True)
-    out = [sender.split("<")[-1].strip(">").strip() for sender in senders]
-    return {"senders": out}
+    sender_emails = [sender.split("<")[-1].strip(">").strip() for sender in senders]
+
+    result = []
+    for email in sender_emails:
+        # Find last message sent by borodin@medsenger.ru to this sender
+        last_sent = await Mail.filter(
+            from_user="borodin@medsenger.ru", to_user__contains=email
+        ).order_by("-date").first()
+
+        last_sent_date = last_sent.date if last_sent else None
+
+        # Count unread messages: messages from sender after last_sent_date
+        if last_sent_date:
+            unread_count = await Mail.filter(
+                from_user__contains=email,
+                to_user="borodin@medsenger.ru",
+                date__gt=last_sent_date
+            ).count()
+        else:
+            unread_count = await Mail.filter(
+                from_user__contains=email,
+                to_user="borodin@medsenger.ru"
+            ).count()
+
+        # Get last message from sender
+        last_msg = await Mail.filter(
+            from_user__contains=email,
+            to_user="borodin@medsenger.ru"
+        ).order_by("-date").first()
+
+        last_message_subject = last_msg.subject if last_msg else None
+        last_message_date = last_msg.date if last_msg else None
+
+        result.append(SenderInfo(
+            uuid=email,
+            email=email,
+            unreadCount=unread_count,
+            lastMessage=last_message_subject,
+            lastMessageDate=last_message_date
+        ))
+
+    return {"senders": result}
 
 @app.get("/chat/{sender}", response_model=ChatResponse)
 async def get_chat(sender: str):
