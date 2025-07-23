@@ -8,6 +8,9 @@ from models.migrate import run_migrations
 import uvicorn
 import asyncio
 import os
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
 
 app = FastAPI()
 
@@ -16,7 +19,7 @@ cors_mode = os.getenv("CORS_MODE", "")
 if cors_mode == "prod":
     origins = ["https://mail.telepat.online"]
 else:
-    origins = ["http://localhost:5137"]
+    origins = ["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,18 +29,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/ping")
+# Response models for documentation
+class MailResponse(BaseModel):
+    from_user: str
+    to_user: str
+    subject: str
+    body: str
+    date: datetime
+    message_id: str
+    attachments_present: bool
+    type: str
+
+class ChatResponse(BaseModel):
+    chat: List[MailResponse]
+
+class SendersResponse(BaseModel):
+    senders: List[str]
+
+class PingResponse(BaseModel):
+    message: str
+
+@app.get("/ping", response_model=PingResponse)
 async def ping():
     return {"message": "Mailer backend is running!"}
 
-@app.get("/senders")
+@app.get("/senders", response_model=SendersResponse)
 async def get_senders():
     senders = await Mail.filter().distinct().values_list("from_user", flat=True)
     out = [sender.split("<")[-1].strip(">").strip() for sender in senders]
     return {"senders": out}
 
-
-@app.get("/chat/{sender}")
+@app.get("/chat/{sender}", response_model=ChatResponse)
 async def get_chat(sender: str):
     if not sender:
         raise HTTPException(status_code=400, detail="Sender cannot be empty")
