@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   postgres:
     image: postgres:15
@@ -46,6 +44,7 @@ services:
     env_file:
       - .env
     environment:
+      PROD_MODE: true
       DB_HOST: postgres
       DB_LOGIN: postgres
       DB_PASSWORD: password
@@ -104,6 +103,26 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+  
+  aiworker:
+    build:
+      context: .
+      dockerfile: AiWorker/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    networks:
+      - ai_mail_net
+    environment:
+      PROD_MODE: true
+      DB_HOST: postgres
+      DB_LOGIN: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+      
 
 volumes:
   pgdata:

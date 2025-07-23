@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import uuid as uuid_module
 
 app = FastAPI()
 
@@ -40,6 +41,8 @@ class MailResponse(BaseModel):
     message_id: str
     attachments_present: bool
     type: str
+    recognized: Optional[str]
+    pre_generated_answer: Optional[str]
 
 class ChatResponse(BaseModel):
     chat: List[MailResponse]
@@ -114,7 +117,7 @@ async def get_chat(sender: str):
         raise HTTPException(status_code=400, detail="Sender cannot be empty")
 
     chat = await Mail.filter(Q(from_user__contains=sender) | Q(to_user__contains=sender)).order_by("date").values(
-        "from_user", "to_user", "subject", "body", "date", "message_id", "attachments_present", "type"
+        "from_user", "to_user", "subject", "body", "date", "message_id", "attachments_present", "type", "recognized", "pre_generated_answer"
     )
 
     if not chat:

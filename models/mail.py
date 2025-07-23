@@ -10,3 +10,5 @@ class Mail(models.Model):
     message_id = fields.CharField(max_length=255)
     attachments_present = fields.BooleanField()
     type = fields.CharField(max_length=32)
+    recognized = fields.CharField(max_length=32, default=None, null=True)
+    pre_generated_answer = fields.TextField(default=None, null=True)
