@@ -122,6 +122,15 @@ services:
       DB_PASSWORD: password
       DB_PORT: 5432
       DB_DATABASE: postgres
+
+  spamassassin:
+    image: axllent/spamassassin
+    container_name: spamassassin
+    expose:
+      - "783"
+    restart: unless-stopped
+    networks:
+      - ai_mail_net
       
 
 volumes:
