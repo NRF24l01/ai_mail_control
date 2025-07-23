@@ -247,75 +247,36 @@ async function loadMore() {
         }
 }
 
-function fakeFetchDialogs() {
-        return new Promise((resolve, reject) => {
-                setTimeout(() => {
-                        // Simulate a 10% chance of error for testing
-                        if (Math.random() < 0.1) {
-                                reject(new Error('Network error'))
-                                return
-                        }
-                        
-                        resolve([
-                                { 
-                                        id: 1, 
-                                        email: 'alice@example.com', 
-                                        unreadCount: 2, 
-                                        lastMessage: 'Could you please review the latest proposal?',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 30) // 30 minutes ago
-                                },
-                                { 
-                                        id: 2, 
-                                        email: 'bob@example.com', 
-                                        unreadCount: 0,
-                                        lastMessage: 'Thanks for your help with the project!',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 60 * 3) // 3 hours ago
-                                },
-                                { 
-                                        id: 3, 
-                                        email: 'carol@example.com', 
-                                        unreadCount: 5,
-                                        lastMessage: 'We need to discuss the timeline for the next sprint',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 15) // 15 minutes ago
-                                },
-                                { 
-                                        id: 4, 
-                                        email: 'dave@example.com', 
-                                        unreadCount: 1,
-                                        lastMessage: 'Did you get my email about the client meeting?',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 60 * 24) // 1 day ago
-                                },
-                                { 
-                                        id: 5, 
-                                        email: 'support@example.com', 
-                                        unreadCount: 3,
-                                        lastMessage: 'Your ticket #45678 has been updated',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 5) // 5 minutes ago
-                                },
-                        ])
-                }, 800)
-        })
+async function fakeFetchDialogs() {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
+        const url = `${backendUrl}/senders`
+        try {
+                const response = await fetch(url)
+                if (!response.ok) {
+                        return Promise.reject(new Error('Network error'))
+                }
+                const data = await response.json()
+                // data.senders is an array of emails
+                // Add fake dialog data for each sender
+                const now = Date.now()
+                const dialogs = data.senders.map((email, idx) => ({
+                        id: idx + 1,
+                        email,
+                        unreadCount: Math.floor(Math.random() * 6), // 0-5
+                        lastMessage: 'This is a fake last message for ' + email,
+                        lastMessageDate: new Date(now - 1000 * 60 * (idx + 1) * 10) // spaced by 10min
+                }))
+                return dialogs
+        } catch (err) {
+                error.value = err.message || 'Failed to load dialogs'
+                return []
+        }
 }
 
 function fakeFetchMoreDialogs() {
         return new Promise((resolve) => {
                 setTimeout(() => {
-                        resolve([
-                                { 
-                                        id: 6, 
-                                        email: 'marketing@example.com', 
-                                        unreadCount: 0,
-                                        lastMessage: 'New campaign materials are ready for review',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 60 * 48) // 2 days ago
-                                },
-                                { 
-                                        id: 7, 
-                                        email: 'hr@example.com', 
-                                        unreadCount: 2,
-                                        lastMessage: 'Please complete your annual review by Friday',
-                                        lastMessageDate: new Date(Date.now() - 1000 * 60 * 60 * 12) // 12 hours ago
-                                }
-                        ])
+                        resolve([])
                 }, 800)
         })
 }
