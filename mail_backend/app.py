@@ -19,7 +19,7 @@ cors_mode = os.getenv("CORS_MODE", "")
 if cors_mode == "prod":
     origins = ["https://mail.telepat.online"]
 else:
-    origins = ["http://localhost:5137"]
+    origins = ["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
