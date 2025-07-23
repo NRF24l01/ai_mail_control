@@ -1,6 +1,6 @@
 import asyncio
 from aerich import Command
-from .tortoise_config import TORTOISE_ORM
+from models.tortoise_config import TORTOISE_ORM  # убрана точка для абсолютного импорта
 from tortoise import Tortoise
 
 async def init_db():
