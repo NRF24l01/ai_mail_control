@@ -19,9 +19,6 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mail_backend
 
     steps:
       - name: Checkout репозиторий
@@ -36,6 +33,7 @@ jobs:
       - name: Собираем Docker-образ
         run: |
           docker build \
+            -f mail_backend/Dockerfile \
             -t ghcr.io/${{ env.REPO_NAME }}/mail-backend .
 
       - name: Пушим образ в GHCR
