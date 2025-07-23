@@ -17,6 +17,8 @@ RUN npm run build
 # === Финальный образ на основе Nginx ===
 FROM nginx:alpine
 
+RUN apk add --no-cache curl
+
 # Удаляем стандартные конфиги и копируем наш Nginx конфиг
 RUN rm -rf /etc/nginx/conf.d/*
 COPY nginx.conf /etc/nginx/conf.d/default.conf
