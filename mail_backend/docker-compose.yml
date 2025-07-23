@@ -7,11 +7,10 @@ volumes:
   pgdata:
 
 services:
-  db:
+  postgress-mail:
     image: postgres:15
+    container_name: postgress-mail
     restart: always
-    env_file:
-      - ../.env
     expose:
       - "5432"
     environment:
@@ -29,17 +28,22 @@ services:
     networks:
       - fastapi-mail-backend-net
 
-  backend:
+  backend-mail:
+    container_name: backend-mail
     build:
       context: ../
       dockerfile: mail_backend/Dockerfile
     depends_on:
-      db:
+      postgress-mail:
         condition: service_healthy
-    env_file:
-      - ../.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
-      - DB_HOST=db
+      - DB_HOST=postgress-mail
+      - DB_PORT=5432
       - DB_LOGIN=postgres
       - DB_PASSWORD=password
       - DB_DATABASE=postgres
