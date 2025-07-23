@@ -1,0 +1,6 @@
+tqdm
+python-dotenv
+tortoise-orm
+asyncpg
+redis
+aerich
