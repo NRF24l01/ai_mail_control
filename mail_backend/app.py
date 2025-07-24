@@ -73,6 +73,9 @@ class SettingsUpdateRequest(BaseModel):
     answers: Optional[dict]
     types: Optional[list]
 
+class RegenerateResponse(BaseModel):
+    updated: int
+
 @app.get("/ping", response_model=PingResponse)
 async def ping():
     return {"message": "Mailer backend is running!"}
@@ -167,6 +170,19 @@ async def update_settings(update: SettingsUpdateRequest):
         "answers": settings.answers,
         "types": settings.types,
     }
+
+@app.post("/regenerate/all", response_model=RegenerateResponse)
+async def regenerate_all():
+    updated = await Mail.all().update(recognized=None, pre_generated_answer=None)
+    return {"updated": updated}
+
+@app.post("/regenerate/{sender}", response_model=RegenerateResponse)
+async def regenerate_sender(sender: str):
+    updated = await Mail.filter(Q(from_user__contains=sender) | Q(to_user__contains=sender)).update(
+        recognized=None, pre_generated_answer=None
+    )
+    return {"updated": updated}
+
 
 register_tortoise(
     app,
