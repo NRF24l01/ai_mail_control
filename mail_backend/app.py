@@ -89,9 +89,10 @@ async def get_senders():
 
     result = []
     for email in sender_emails:
-        # Find last message sent by borodin@medsenger.ru to this sender
+        # Find last message sent by borodin@medsenger.ru or support@medsenger.ru to this sender
         last_sent = await Mail.filter(
-            from_user__contains="borodin@medsenger.ru", to_user__contains=email
+            Q(from_user__contains="borodin@medsenger.ru") | Q(from_user__contains="support@medsenger.ru"),
+            to_user__contains=email
         ).order_by("-date").first()
 
         last_sent_date = last_sent.date if last_sent else None
@@ -99,20 +100,20 @@ async def get_senders():
         # Count unread messages: messages from sender after last_sent_date
         if last_sent_date:
             unread_count = await Mail.filter(
+                Q(to_user__contains="borodin@medsenger.ru") | Q(to_user__contains="support@medsenger.ru"),
                 from_user__contains=email,
-                to_user__contains="borodin@medsenger.ru",
                 date__gt=last_sent_date
             ).count()
         else:
             unread_count = await Mail.filter(
-                from_user__contains=email,
-                to_user__contains="borodin@medsenger.ru"
+                Q(to_user__contains="borodin@medsenger.ru") | Q(to_user__contains="support@medsenger.ru"),
+                from_user__contains=email
             ).count()
 
         # Get last message from sender
         last_msg = await Mail.filter(
-            from_user__contains=email,
-            to_user__contains="borodin@medsenger.ru"
+            Q(to_user__contains="borodin@medsenger.ru") | Q(to_user__contains="support@medsenger.ru"),
+            from_user__contains=email
         ).order_by("-date").first()
 
         last_message_subject = last_msg.subject if last_msg else None
