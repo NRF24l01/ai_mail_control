@@ -141,9 +141,7 @@ async def get_chat(sender: str):
 
 @app.get("/settings", response_model=SettingsResponse)
 async def get_settings():
-    settings = await Settings.get_or_none(id=1)
-    if not settings:
-        raise HTTPException(status_code=404, detail="Settings not found")
+    settings, _ = await Settings.get_or_create(id=1)
     return {
         "gpt_prompt": settings.gpt_prompt,
         "gpt_model": settings.gpt_model,
@@ -153,9 +151,7 @@ async def get_settings():
 
 @app.post("/settings", response_model=SettingsResponse)
 async def update_settings(update: SettingsUpdateRequest):
-    settings = await Settings.get_or_none(id=1)
-    if not settings:
-        raise HTTPException(status_code=404, detail="Settings not found")
+    settings, _ = await Settings.get_or_create(id=1)
     if update.gpt_prompt is not None:
         settings.gpt_prompt = update.gpt_prompt
     if update.gpt_model is not None:
@@ -175,7 +171,7 @@ async def update_settings(update: SettingsUpdateRequest):
 register_tortoise(
     app,
     db_url=POSTGRES_STR,
-    modules={"models": ["models.mail"]},
+    modules={"models": ["models.mail", "models.settings"]},
     generate_schemas=False,
     add_exception_handlers=True,
 )

@@ -6,22 +6,17 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('../views/Home.vue'),
+      redirect: '/auth/login',
     },
     {
       path: '/settings',
       name: 'settings',
-      component: () => import('../views/Home.vue'),
+      component: () => import('../views/Settings.vue'),
     },
     {
       path: '/dialogs',
       name: 'dialogs',
       component: () => import('../views/Dialogs.vue'),
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: () => import('../views/Home.vue'),
     },
     {
       path: "/auth/login",
