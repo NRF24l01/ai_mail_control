@@ -69,12 +69,13 @@ async def get_senders():
     # Get all unique senders
     senders = await Mail.filter().distinct().values_list("from_user", flat=True)
     sender_emails = [sender.split("<")[-1].strip(">").strip() for sender in senders]
+    sender_emails = set(sender_emails)
 
     result = []
     for email in sender_emails:
         # Find last message sent by borodin@medsenger.ru to this sender
         last_sent = await Mail.filter(
-            from_user="borodin@medsenger.ru", to_user__contains=email
+            from_user__contains="borodin@medsenger.ru", to_user__contains=email
         ).order_by("-date").first()
 
         last_sent_date = last_sent.date if last_sent else None
@@ -83,19 +84,19 @@ async def get_senders():
         if last_sent_date:
             unread_count = await Mail.filter(
                 from_user__contains=email,
-                to_user="borodin@medsenger.ru",
+                to_user__contains="borodin@medsenger.ru",
                 date__gt=last_sent_date
             ).count()
         else:
             unread_count = await Mail.filter(
                 from_user__contains=email,
-                to_user="borodin@medsenger.ru"
+                to_user__contains="borodin@medsenger.ru"
             ).count()
 
         # Get last message from sender
         last_msg = await Mail.filter(
             from_user__contains=email,
-            to_user="borodin@medsenger.ru"
+            to_user__contains="borodin@medsenger.ru"
         ).order_by("-date").first()
 
         last_message_subject = last_msg.subject if last_msg else None
