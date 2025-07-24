@@ -95,13 +95,24 @@ async function fetchMessages(chatId) {
         if (!response.ok) throw new Error('Ошибка загрузки сообщений')
         const data = await response.json()
         // Преобразуем данные из MailResponse к формату сообщений чата
-        return data.chat.map((mail, idx) => ({
+        const chatMessages = data.chat.map((mail, idx) => ({
             id: mail.message_id || idx,
             from: mail.type === "INBOX" ? 'other' : 'me',
             subject: mail.subject || 'Без темы',
             text: mail.body,
             time: mail.date,
-            read: true // Можно добавить логику для read, если появится
+            read: true,
+            recognized: mail.recognized,
+            pre_generated_answer: mail.pre_generated_answer
+        }))
+        // Если есть сообщение с recognized !== null, задаем newMessage
+        const recognizedMsg = chatMessages.find(msg => msg.recognized !== null)
+        if (recognizedMsg && recognizedMsg.pre_generated_answer) {
+            newMessage.value = recognizedMsg.pre_generated_answer
+        }
+        // Возвращаем только нужные поля для сообщений
+        return chatMessages.map(({id, from, subject, text, time, read}) => ({
+            id, from, subject, text, time, read
         }))
     } catch (error) {
         console.error('Ошибка запроса чата:', error)
