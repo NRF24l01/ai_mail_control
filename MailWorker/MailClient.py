@@ -122,16 +122,13 @@ class MailClient:
 
     def extract_reply_only(self, body: str) -> str:
         """
-        Удаляет цитируемую часть в ответных письмах.
-        Поддерживает русские и английские шаблоны.
-        Очищает лишние пробелы, спецсимволы, убирает подписи и цитаты.
+        Оставляет только текст последнего ответа, удаляя цитаты и старые переписки.
+        Более агрессивно режет по датам, шаблонам, >, From:, Кому:, Тема:, а также по строкам с email.
         """
-        # Удаляем все строки, начинающиеся с '>', 'On ... wrote:', 'From:', 'Sent:', 'To:', 'Subject:', "---", "Кому:", "Тема:"
+        # Шаблоны начала цитаты (русские и английские)
         patterns = [
-            r"^On .+wrote:$",           # английский ответ
-            r"^>.*$",                   # цитата
-            r"^\d{1,2}.*написал[а]?:$", # русский шаблон
-            r"^From:.*$",               # quoted headers
+            r"^>.*$",                                   # цитата
+            r"^From:.*$",                               # quoted headers
             r"^Sent:.*$",
             r"^To:.*$",
             r"^Subject:.*$",
@@ -142,21 +139,32 @@ class MailClient:
             r"^С уважением.*$",
             r"^Электронная почта:.*$",
             r"^Сайт:.*$",
-            r"^Телефон.*$"
+            r"^Телефон.*$",
+            r"^\d{1,2}\s+\w+\s+\d{4}\s*г\.,?\s*в\s*\d{2}:\d{2},?\s*.*написал[а]?:",  # дата + написал(а)
+            r"^\d{1,2}\s+\w+\s+\d{4}\s*г\.,?\s*в\s*\d{2}:\d{2},?\s*.*wrote:",
+            r"^On .+wrote:$",                           # английский ответ
+            r"^.*<.*@.*>.*$",                           # строка с email
         ]
 
         lines = body.strip().splitlines()
         reply_lines = []
+        stop = False
         for line in lines:
-            # Удаляем лишние пробелы и невидимые символы
             clean_line = line.strip().replace('\xa0', ' ').replace('\ufeff', '')
+            # Если строка совпадает с любым шаблоном — прекращаем добавлять
             if any(re.match(p, clean_line) for p in patterns):
-                break
-            reply_lines.append(clean_line)
+                stop = True
+            if not stop and clean_line:
+                reply_lines.append(clean_line)
 
-        # Удаляем пустые строки и объединяем
-        reply_text = "\n".join([l for l in reply_lines if l]).strip()
-        # Удаляем повторяющиеся пробелы
+        # Если не сработало, пробуем отрезать всё после первой строки с датой и email
+        if not reply_lines and lines:
+            for i, line in enumerate(lines):
+                if re.search(r"\d{1,2}\s+\w+\s+\d{4}\s*г\.,?\s*в\s*\d{2}:\d{2}", line) and re.search(r"<.*@.*>", line):
+                    reply_lines = [l.strip() for l in lines[:i] if l.strip()]
+                    break
+
+        reply_text = "\n".join(reply_lines).strip()
         reply_text = re.sub(r'\s+', ' ', reply_text)
         return reply_text
 
@@ -177,10 +185,6 @@ class MailClient:
             date_str = dt.strftime("%Y-%m-%d %H:%M:%S")
 
             body, attachments, has_attachments, to_field, content_type, charset = self._extract_body_attachments(msg)
-
-            # print("=" * 100)
-            # print(sender)
-            # print(body)
             thread_id = self._get_thread_id(msg)
             origin = "inbox" if folder.upper() == "INBOX" else "sent"
             message_id = (msg.get("Message-ID") or "").strip()
@@ -193,10 +197,6 @@ class MailClient:
                 email_key = (subject, sender, date_str, folder)
                 self.attachments_map[email_key] = attachments
 
-            # print(body)
-            # print("-" * 100)
-            # print(body.split("написал"))
-            # print("=" * 100)
             body = self.extract_reply_only(body)
             email_data = {
                 "idx": idx,

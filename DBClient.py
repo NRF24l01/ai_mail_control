@@ -46,3 +46,13 @@ class DBClient:
         async with in_transaction():
             settings, _=  await Settings.get_or_create(id=1)
             return settings
+
+    async def email_exists(self, email):
+        """
+        Проверяет, есть ли письмо в базе по message_id.
+        Возвращает True, если письмо найдено, иначе False.
+        """
+        async with in_transaction():
+            message_id = email.get("message_id", "")
+            exists = await Mail.filter(message_id=message_id).exists()
+            return exists
