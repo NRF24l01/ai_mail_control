@@ -41,6 +41,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      spamassassin:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -131,7 +133,6 @@ services:
     restart: unless-stopped
     networks:
       - ai_mail_net
-      
 
 volumes:
   pgdata:
