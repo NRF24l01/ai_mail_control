@@ -41,7 +41,8 @@ class MailWorker:
                         cleaned_email = self._clean_bytes(email)
                         self.redis_client.set(email["message_id"], json.dumps(cleaned_email, ensure_ascii=False))
                         continue
-                    await self.db_client.save_email(email)
+                    if not await self.db_client.email_exists(email):
+                        await self.db_client.save_email(email)
                 except Exception as e:
                     self.logger.error(f"Ошибка при обработке письма: {e}")
         except Exception as e:
