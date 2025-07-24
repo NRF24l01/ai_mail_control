@@ -39,40 +39,52 @@
                 </div>
                 
                 <div v-else class="space-y-3">
-                    <div v-for="(type, idx) in formData.types" :key="idx" 
-                         class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md">
-                        <div class="flex items-start p-4">
-                            <div class="flex-1 space-y-3">
-                                <div>
-                                    <label :for="`type-${idx}`" class="block text-xs font-medium text-gray-500 mb-1">Type</label>
-                                    <input 
-                                        :id="`type-${idx}`"
-                                        v-model="formData.types[idx]" 
-                                        class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    />
+                    <transition-group name="fade-card" tag="div">
+                        <div
+                            v-for="(type, idx) in formData.types"
+                            :key="`type-${idx}`"
+                            class="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md mb-4"
+                        >
+                            <div class="flex items-start p-4">
+                                <div class="flex-1 space-y-3">
+                                    <div>
+                                        <label :for="`type-${idx}`" class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                                        <input 
+                                            :id="`type-${idx}`"
+                                            v-model="formData.types[idx]" 
+                                            :placeholder="'Enter type name'"
+                                            class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            ref="typeInputRefs"
+                                            :ref="el => typeInputRefs[idx] = el"
+                                            @input="handleTypeCardInput(idx)"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label :for="`answer-${idx}`" class="block text-xs font-medium text-gray-500 mb-1">Standard Answer</label>
+                                        <input 
+                                            :id="`answer-${idx}`"
+                                            v-model="formData.answers[type]" 
+                                            :placeholder="'Enter standard response'"
+                                            class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                            ref="answerInputRefs"
+                                            :ref="el => answerInputRefs[idx] = el"
+                                            @input="handleTypeCardInput(idx)"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label :for="`answer-${idx}`" class="block text-xs font-medium text-gray-500 mb-1">Standard Answer</label>
-                                    <input 
-                                        :id="`answer-${idx}`"
-                                        v-model="formData.answers[type]" 
-                                        placeholder="Enter standard response" 
-                                        class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
-                                    />
-                                </div>
+                                <button 
+                                    type="button" 
+                                    @click="confirmRemoveType(idx)" 
+                                    class="ml-3 bg-white text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                    aria-label="Remove type"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </button>
                             </div>
-                            <button 
-                                type="button" 
-                                @click="confirmRemoveType(idx)" 
-                                class="ml-3 bg-white text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                aria-label="Remove type"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
                         </div>
-                    </div>
+                    </transition-group>
                 </div>
                 
                 <div class="mt-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -85,6 +97,7 @@
                                 v-model="newType" 
                                 placeholder="Enter type name" 
                                 class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                @input="handleNewTypeInput"
                             />
                         </div>
                         <div class="flex-1">
@@ -94,17 +107,8 @@
                                 v-model="newTypeAnswer" 
                                 placeholder="Enter standard response" 
                                 class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                                @input="handleNewAnswerInput"
                             />
-                        </div>
-                        <div class="flex items-end">
-                            <button 
-                                type="button" 
-                                @click="addTypeWithAnswer" 
-                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors h-10"
-                                :disabled="!newType"
-                            >
-                                Add
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -128,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch, nextTick } from 'vue'
 
 const formData = reactive({
     gpt_prompt: '',
@@ -143,6 +147,10 @@ const message = ref('')
 const isSuccess = ref(true)
 const isLoading = ref(true)
 const isSaving = ref(false)
+const typeInputRefs = ref([])
+const answerInputRefs = ref([])
+let lastAddedIdx = ref(null)
+let lastFocusField = ref('type') // 'type' or 'answer'
 
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL
 
@@ -183,6 +191,17 @@ onMounted(async () => {
     }
 })
 
+function setTypeInputRef(idx, el) {
+    if (el) {
+        typeInputRefs.value[idx] = el
+        // Focus only if this is the last added index
+        if (lastAddedIdx.value === idx) {
+            el.focus()
+            lastAddedIdx.value = null
+        }
+    }
+}
+
 function addTypeWithAnswer() {
     if (newType.value) {
         if (!formData.types.includes(newType.value)) {
@@ -191,6 +210,27 @@ function addTypeWithAnswer() {
         } else {
             showMessage(`Type "${newType.value}" already exists`, false)
         }
+        newType.value = ''
+        newTypeAnswer.value = ''
+    }
+}
+
+function clearNewType() {
+    // Always keep fields as they are, but this can be used to reset if needed
+    // For now, do nothing
+}
+
+function tryAddType() {
+    // Only add if both fields are filled, type is not duplicate, and not empty
+    if (newType.value && newTypeAnswer.value && !formData.types.includes(newType.value)) {
+        formData.types.push(newType.value)
+        formData.answers[newType.value] = newTypeAnswer.value
+        newType.value = ''
+        newTypeAnswer.value = ''
+    } else if (!newType.value && !newTypeAnswer.value) {
+        // If both fields are empty, do nothing
+    } else if (formData.types.includes(newType.value)) {
+        showMessage(`Type "${newType.value}" already exists`, false)
         newType.value = ''
         newTypeAnswer.value = ''
     }
@@ -237,4 +277,90 @@ async function saveSettings() {
         isSaving.value = false
     }
 }
+
+function handleNewTypeInput(e) {
+    // Create new card if user starts typing in type or answer
+    if (!e.target.value && !newTypeAnswer.value) return
+    if (formData.types.includes(e.target.value)) {
+        showMessage(`Type "${e.target.value}" already exists`, false)
+        newType.value = ''
+        return
+    }
+    if (e.target.value) {
+        formData.types.push(e.target.value)
+        formData.answers[e.target.value] = newTypeAnswer.value || ''
+        const idx = formData.types.length - 1
+        newType.value = ''
+        newTypeAnswer.value = ''
+        lastFocusField.value = 'type'
+        nextTick(() => {
+            if (typeInputRefs.value[idx]) {
+                typeInputRefs.value[idx].focus()
+            }
+        })
+    }
+}
+
+function handleNewAnswerInput(e) {
+    // Create new card if user starts typing in type or answer
+    if (!e.target.value && !newType.value) return
+    if (newType.value && formData.types.includes(newType.value)) {
+        showMessage(`Type "${newType.value}" already exists`, false)
+        newType.value = ''
+        newTypeAnswer.value = ''
+        return
+    }
+    if (newType.value || e.target.value) {
+        const typeToAdd = newType.value
+        formData.types.push(typeToAdd)
+        formData.answers[typeToAdd] = e.target.value
+        const idx = formData.types.length - 1
+        newType.value = ''
+        newTypeAnswer.value = ''
+        lastFocusField.value = 'answer'
+        nextTick(() => {
+            if (answerInputRefs.value[idx]) {
+                answerInputRefs.value[idx].focus()
+            }
+        })
+    }
+}
+
+function handleTypeCardInput(idx) {
+    // Remove card if both fields are empty (type and answer)
+    const typeVal = formData.types[idx]
+    // Correctly get answer value by index, not by type key
+    let answerVal = ''
+    // Find the answer by index in types array
+    if (formData.types[idx] in formData.answers) {
+        answerVal = formData.answers[formData.types[idx]]
+    } else {
+        // If type is empty, try to find answer by previous type value (not reliable, but fallback)
+        answerVal = ''
+    }
+    // Remove if both are empty (do not remove if answer has value, even if type is empty)
+    if ((!typeVal || typeVal.trim() === '') && (!answerVal || answerVal.trim() === '')) {
+        formData.types.splice(idx, 1)
+        Object.keys(formData.answers).forEach(key => {
+            if (!key || key.trim() === '') delete formData.answers[key]
+        })
+        typeInputRefs.value.splice(idx, 1)
+        answerInputRefs.value.splice(idx, 1)
+    }
+}
 </script>
+
+<style scoped>
+.fade-card-enter-active, .fade-card-leave-active {
+    transition: opacity 0.3s;
+}
+.fade-card-enter-from, .fade-card-leave-to {
+    opacity: 0;
+}
+.fade-card-leave-from, .fade-card-enter-to {
+    opacity: 1;
+}
+.mb-4 {
+    margin-bottom: 1rem;
+}
+</style>
