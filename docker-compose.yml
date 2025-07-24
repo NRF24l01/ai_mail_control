@@ -127,7 +127,6 @@ services:
 
   spamassassin:
     image: axllent/spamassassin
-    container_name: spamassassin
     expose:
       - "783"
     restart: unless-stopped
