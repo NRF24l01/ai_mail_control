@@ -33,18 +33,24 @@ class MailWorker:
             emails = self.mail_client.fetch_threads()
             for email in tqdm(emails, desc="Обработка писем"):
                 try:
+                    # print(f"Обрабатывается письмо: [{email.get('date_str')}] '{email.get('subject')}' от {email.get('from')}")
+                    # print(email)
                     if await self.mail_client.is_spam(email):
                         if isinstance(email, bytes):
                             email = json.loads(email.decode("utf-8"))
                         cleaned_email = self._clean_bytes(email)
                         self.redis_client.set(email["message_id"], json.dumps(cleaned_email, ensure_ascii=False))
                         continue
-
                     await self.db_client.save_email(email)
                 except Exception as e:
                     self.logger.error(f"Ошибка при обработке письма: {e}")
         except Exception as e:
             self.logger.error(f"Ошибка при получении новых писем: {e}")
+
+    async def init(self):
+        from models import run_migrations, init_db
+        await init_db()
+        await run_migrations()
 
     async def run(self):
         try:
@@ -55,8 +61,8 @@ class MailWorker:
         except Exception as e:
             self.logger.critical(f"Критическая ошибка в работе MailWorker: {e}")
 
-
-async def periodic_run():
+async def periodic_run(mail):
+    # mail.init()
     while True:
         await mail.run()
         print("Почта проверена, ждем 10 минут...")
@@ -71,4 +77,4 @@ if __name__ == "__main__":
     )
     mail = MailWorker(mail_client, db_client, redis_client)
 
-    asyncio.run(periodic_run())
+    asyncio.run(periodic_run(mail))

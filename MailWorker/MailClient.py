@@ -15,6 +15,7 @@ import aiospamc
 from email.utils import format_datetime
 from datetime import datetime
 from bs4 import BeautifulSoup
+import re
 
 class MailClient:
     """
@@ -104,7 +105,7 @@ class MailClient:
 
         if html_body:
             try:
-                soup = BeautifulSoup(html_body, "lxml")
+                soup = BeautifulSoup(html_body, "html.parser")
                 text = soup.get_text(separator="\n", strip=True)
                 if text.strip():
                     body = text
@@ -116,6 +117,49 @@ class MailClient:
         has_attachments = bool(attachments)
 
         return body, attachments, has_attachments, to_field, content_type, charset
+
+
+
+    def extract_reply_only(self, body: str) -> str:
+        """
+        Удаляет цитируемую часть в ответных письмах.
+        Поддерживает русские и английские шаблоны.
+        Очищает лишние пробелы, спецсимволы, убирает подписи и цитаты.
+        """
+        # Удаляем все строки, начинающиеся с '>', 'On ... wrote:', 'From:', 'Sent:', 'To:', 'Subject:', "---", "Кому:", "Тема:"
+        patterns = [
+            r"^On .+wrote:$",           # английский ответ
+            r"^>.*$",                   # цитата
+            r"^\d{1,2}.*написал[а]?:$", # русский шаблон
+            r"^From:.*$",               # quoted headers
+            r"^Sent:.*$",
+            r"^To:.*$",
+            r"^Subject:.*$",
+            r"^---+$",
+            r"^Кому:.*$",
+            r"^Тема:.*$",
+            r"^--$",
+            r"^С уважением.*$",
+            r"^Электронная почта:.*$",
+            r"^Сайт:.*$",
+            r"^Телефон.*$"
+        ]
+
+        lines = body.strip().splitlines()
+        reply_lines = []
+        for line in lines:
+            # Удаляем лишние пробелы и невидимые символы
+            clean_line = line.strip().replace('\xa0', ' ').replace('\ufeff', '')
+            if any(re.match(p, clean_line) for p in patterns):
+                break
+            reply_lines.append(clean_line)
+
+        # Удаляем пустые строки и объединяем
+        reply_text = "\n".join([l for l in reply_lines if l]).strip()
+        # Удаляем повторяющиеся пробелы
+        reply_text = re.sub(r'\s+', ' ', reply_text)
+        return reply_text
+
 
     def _process_email(self, idx, folder, uid, threads_dict, lock):
         """Обрабатывает одно письмо"""
@@ -131,8 +175,12 @@ class MailClient:
             subject = self._decode_header(msg["Subject"])
             sender = self._decode_header(msg.get("From"))
             date_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+
             body, attachments, has_attachments, to_field, content_type, charset = self._extract_body_attachments(msg)
 
+            # print("=" * 100)
+            # print(sender)
+            # print(body)
             thread_id = self._get_thread_id(msg)
             origin = "inbox" if folder.upper() == "INBOX" else "sent"
             message_id = (msg.get("Message-ID") or "").strip()
@@ -145,6 +193,11 @@ class MailClient:
                 email_key = (subject, sender, date_str, folder)
                 self.attachments_map[email_key] = attachments
 
+            # print(body)
+            # print("-" * 100)
+            # print(body.split("написал"))
+            # print("=" * 100)
+            body = self.extract_reply_only(body)
             email_data = {
                 "idx": idx,
                 "uid": uid,
@@ -219,7 +272,7 @@ class MailClient:
             ).encode('utf-8')
             request = request_headers + raw_email_bytes
 
-            score = await aiospamc.check(request, host='spamassassin')
+            score = await aiospamc.check(request, host='spamassassin') #host="localhost")
             return score.headers.spam.score if score.headers.spam else 0.0
 
         except Exception as e:
