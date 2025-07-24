@@ -7,3 +7,4 @@ class Settings(models.Model):
     gpt_model = fields.CharField(max_length=255, default="gpt-4.1-nano")
     answers = fields.JSONField(default={"missmail": "Вам не к нам"})
     types = fields.JSONField(default=["missmail", "spam", "question", "answer", "other"])
+    tg_users = fields.JSONField(default=[])

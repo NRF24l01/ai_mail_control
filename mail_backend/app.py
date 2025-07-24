@@ -66,12 +66,14 @@ class SettingsResponse(BaseModel):
     gpt_model: str
     answers: dict
     types: list
+    tg_users: List[int]
 
 class SettingsUpdateRequest(BaseModel):
     gpt_prompt: Optional[str]
     gpt_model: Optional[str]
     answers: Optional[dict]
     types: Optional[list]
+    tg_users: Optional[List[int]]
 
 class RegenerateResponse(BaseModel):
     updated: int
@@ -151,6 +153,7 @@ async def get_settings():
         "gpt_model": settings.gpt_model,
         "answers": settings.answers,
         "types": settings.types,
+        "tg_users": settings.tg_users,
     }
 
 @app.post("/settings", response_model=SettingsResponse)
@@ -164,12 +167,15 @@ async def update_settings(update: SettingsUpdateRequest):
         settings.answers = update.answers
     if update.types is not None:
         settings.types = update.types
+    if update.tg_users is not None:
+        settings.tg_users = update.tg_users
     await settings.save()
     return {
         "gpt_prompt": settings.gpt_prompt,
         "gpt_model": settings.gpt_model,
         "answers": settings.answers,
         "types": settings.types,
+        "tg_users": settings.tg_users,
     }
 
 @app.post("/regenerate/all", response_model=RegenerateResponse)

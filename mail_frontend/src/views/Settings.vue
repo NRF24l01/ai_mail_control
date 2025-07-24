@@ -114,6 +114,45 @@
                 </div>
             </div>
             
+            <div class="space-y-2">
+                <label for="tg-admins" class="block font-semibold">Telegram Admins</label>
+                <div class="flex flex-col space-y-2">
+                    <div v-for="(user, idx) in formData.tg_users" :key="`tg-user-${idx}`" class="flex items-center space-x-2">
+                        <input
+                            type="number"
+                            :id="`tg-user-${idx}`"
+                            v-model.number="formData.tg_users[idx]"
+                            class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Telegram User ID"
+                        />
+                        <button
+                            type="button"
+                            @click="removeTgUser(idx)"
+                            class="bg-white text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                            aria-label="Remove Telegram Admin"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M6 6a1 1 0 011.414 0L10 8.586l2.586-2.586A1 1 0 1114 7.414L11.414 10l2.586 2.586a1 1 0 01-1.414 1.414L10 11.414l-2.586 2.586A1 1 0 115.414 13.414L8 10.828l-2.586-2.586A1 1 0 116 6z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input
+                            type="number"
+                            v-model.number="newTgUser"
+                            class="w-full border border-gray-200 rounded p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Add Telegram User ID"
+                            @keyup.enter="addTgUser"
+                        />
+                        <button
+                            type="button"
+                            @click="addTgUser"
+                            class="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700"
+                        >Add</button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="flex items-center space-x-4 pt-4">
                 <button 
                     type="submit" 
@@ -138,11 +177,13 @@ const formData = reactive({
     gpt_prompt: '',
     gpt_model: '',
     answers: {},
-    types: []
+    types: [],
+    tg_users: []
 })
 
 const newType = ref('')
 const newTypeAnswer = ref('')
+const newTgUser = ref('')
 const message = ref('')
 const isSuccess = ref(true)
 const isLoading = ref(true)
@@ -179,7 +220,8 @@ onMounted(async () => {
                 gpt_prompt: data.gpt_prompt || '',
                 gpt_model: data.gpt_model || '',
                 answers: data.answers || {},
-                types: data.types || []
+                types: data.types || [],
+                tg_users: Array.isArray(data.tg_users) ? data.tg_users : []
             })
         } else {
             showMessage('Error loading settings', false)
@@ -259,10 +301,17 @@ function showMessage(msg, success = true) {
 async function saveSettings() {
     try {
         isSaving.value = true
+        const payload = {
+            gpt_prompt: formData.gpt_prompt,
+            gpt_model: formData.gpt_model,
+            answers: formData.answers,
+            types: formData.types,
+            tg_users: formData.tg_users
+        }
         const res = await fetch(`${VITE_BACKEND_URL}/settings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(payload)
         })
         
         if (res.ok) {
@@ -276,6 +325,25 @@ async function saveSettings() {
     } finally {
         isSaving.value = false
     }
+}
+
+function addTgUser() {
+    const val = Number(newTgUser.value)
+    if (!val || isNaN(val)) {
+        showMessage('Please enter a valid Telegram User ID', false)
+        return
+    }
+    if (formData.tg_users.includes(val)) {
+        showMessage('This Telegram User ID is already added', false)
+        newTgUser.value = ''
+        return
+    }
+    formData.tg_users.push(val)
+    newTgUser.value = ''
+}
+
+function removeTgUser(idx) {
+    formData.tg_users.splice(idx, 1)
 }
 
 function handleNewTypeInput(e) {
