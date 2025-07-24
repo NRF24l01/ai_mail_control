@@ -1,12 +1,33 @@
 <template>
     <div class="flex flex-col w-full max-w-7xl mt-1 mx-auto bg-gray-100 overflow-hidden" style="height: calc(100vh - 58px);">
         <!-- Header -->
-        <div class="flex items-center p-4 bg-white shadow z-10">
+        <div class="flex items-center p-4 bg-white shadow z-10 relative">
             <router-link to="/dialogs" class="text-gray-600 hover:text-gray-900 transition-colors">
                 <i class="fas fa-arrow-left hover:scale-110 transition-transform"></i>
             </router-link>
             <div class="flex flex-col ml-3">
-                <div class="text-xl font-bold">{{ chatId || '...' }}</div>
+                <div class="text-xl font-bold flex items-center">
+                    {{ chatId || '...' }}
+                </div>
+            </div>
+            <!-- Кнопка обновления и recognized справа -->
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+                <button 
+                    @click="regenerate"
+                    class="text-gray-700 hover:bg-gray-200 hover:text-gray-900 rounded-2xl px-3 py-1 transition-all flex items-center"
+                    :disabled="isRegenerating"
+                    title="Обновить recognized"
+                >
+                    <i class="fas fa-sync-alt animate-spin" v-if="isRegenerating"></i>
+                    <i class="fas fa-sync-alt" v-else></i>
+                </button>
+                <span 
+                    v-if="recognizedResult !== null" 
+                    class="text-sm text-gray-700 px-2 py-1 hover:bg-gray-200 rounded transition-colors cursor-help"
+                    :title="`Сообщение было распознано как: ${recognizedResult}`"
+                >
+                    {{ recognizedResult }}
+                </span>
             </div>
         </div>
 
@@ -88,6 +109,10 @@ const newMessage = ref('')
 const messagesContainer = ref(null)
 const isSending = ref(false)
 
+// Новые переменные для regenerate
+const isRegenerating = ref(false)
+const recognizedResult = ref(null)
+
 async function fetchMessages(chatId) {
     const url = `${import.meta.env.VITE_BACKEND_URL}/chat/${chatId}`
     try {
@@ -105,8 +130,14 @@ async function fetchMessages(chatId) {
             recognized: mail.recognized,
             pre_generated_answer: mail.pre_generated_answer
         }))
-        // Если есть сообщение с recognized !== null, задаем newMessage
+        // recognized для отображения
         const recognizedMsg = chatMessages.find(msg => msg.recognized !== null)
+        if (recognizedMsg) {
+            recognizedResult.value = recognizedMsg.recognized
+        } else {
+            recognizedResult.value = null
+        }
+        // Если есть сообщение с recognized !== null, задаем newMessage
         if (recognizedMsg && recognizedMsg.pre_generated_answer) {
             newMessage.value = recognizedMsg.pre_generated_answer
         }
@@ -184,6 +215,25 @@ function formatTime(time) {
 function isSameAuthor(index) {
     if (index === 0) return false
     return messages.value[index].from === messages.value[index - 1].from
+}
+
+async function regenerate() {
+    if (!chatId.value) return
+    isRegenerating.value = true
+    try {
+        const url = `${import.meta.env.VITE_BACKEND_URL}/regenerate/${chatId.value}`
+        const response = await fetch(url, { method: 'POST' })
+        if (!response.ok) throw new Error('Ошибка запроса regenerate')
+        const data = await response.json()
+        // Ожидаем, что recognized в ответе
+        recognizedResult.value = data.recognized ?? null
+        // Можно обновить сообщения, если нужно
+        messages.value = await fetchMessages(chatId.value)
+    } catch (error) {
+        console.error('Ошибка regenerate:', error)
+    } finally {
+        isRegenerating.value = false
+    }
 }
 </script>
 
