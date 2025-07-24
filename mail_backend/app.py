@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import uuid as uuid_module
+from models.settings import Settings
 
 app = FastAPI()
 
@@ -59,6 +60,18 @@ class SendersResponse(BaseModel):
 
 class PingResponse(BaseModel):
     message: str
+
+class SettingsResponse(BaseModel):
+    gpt_prompt: str
+    gpt_model: str
+    answers: dict
+    types: list
+
+class SettingsUpdateRequest(BaseModel):
+    gpt_prompt: Optional[str]
+    gpt_model: Optional[str]
+    answers: Optional[dict]
+    types: Optional[list]
 
 @app.get("/ping", response_model=PingResponse)
 async def ping():
@@ -125,6 +138,39 @@ async def get_chat(sender: str):
         raise HTTPException(status_code=404, detail="No messages found for this sender")
 
     return {"chat": list(chat)}
+
+@app.get("/settings", response_model=SettingsResponse)
+async def get_settings():
+    settings = await Settings.get_or_none(id=1)
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    return {
+        "gpt_prompt": settings.gpt_prompt,
+        "gpt_model": settings.gpt_model,
+        "answers": settings.answers,
+        "types": settings.types,
+    }
+
+@app.post("/settings", response_model=SettingsResponse)
+async def update_settings(update: SettingsUpdateRequest):
+    settings = await Settings.get_or_none(id=1)
+    if not settings:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    if update.gpt_prompt is not None:
+        settings.gpt_prompt = update.gpt_prompt
+    if update.gpt_model is not None:
+        settings.gpt_model = update.gpt_model
+    if update.answers is not None:
+        settings.answers = update.answers
+    if update.types is not None:
+        settings.types = update.types
+    await settings.save()
+    return {
+        "gpt_prompt": settings.gpt_prompt,
+        "gpt_model": settings.gpt_model,
+        "answers": settings.answers,
+        "types": settings.types,
+    }
 
 register_tortoise(
     app,
