@@ -10,6 +10,18 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                 </button>
+                <!-- Regenerate All button -->
+                <button
+                    @click="regenerateAll"
+                    class="p-2 rounded-full hover:bg-gray-100 flex items-center"
+                    :disabled="regenerating"
+                    title="Regenerate All"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" :class="{ 'animate-spin': regenerating }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span class="text-sm text-gray-700">Regenerate All</span>
+                </button>
             </div>
         </div>
 
@@ -164,6 +176,14 @@
                 </button>
             </div>
         </div>
+
+        <!-- Show regenerate status -->
+        <div v-if="regenerateStatus" class="my-2 text-blue-700 text-sm flex items-center">
+            <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01"></path>
+            </svg>
+            {{ regenerateStatus }}
+        </div>
     </div>
 </template>
 
@@ -182,6 +202,8 @@ const selectedIndex = ref(-1)
 const selectedElement = ref(null)
 const limit = ref(10)
 const hasMoreDialogs = ref(true)
+const regenerating = ref(false)
+const regenerateStatus = ref('')
 
 // Debounced search
 const debouncedSearch = ref('')
@@ -394,6 +416,27 @@ function formatDate(date) {
                 month: 'short', 
                 day: 'numeric'
         }).format(messageDate)
+}
+
+async function regenerateAll() {
+    if (regenerating.value) return
+    regenerating.value = true
+    regenerateStatus.value = 'Regenerating...'
+    try {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
+        const url = `${backendUrl}/regenerate/all`
+        const response = await fetch(url, { method: 'POST' })
+        if (!response.ok) throw new Error('Failed to regenerate')
+        const data = await response.json()
+        regenerateStatus.value = `Regenerated ${data.updated} dialogs`
+        // Optionally refresh dialogs after regeneration
+        refreshDialogs()
+    } catch (err) {
+        regenerateStatus.value = 'Error: ' + (err.message || 'Failed to regenerate')
+    } finally {
+        regenerating.value = false
+        setTimeout(() => { regenerateStatus.value = '' }, 4000)
+    }
 }
 </script>
 
