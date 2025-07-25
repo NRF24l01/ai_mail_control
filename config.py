@@ -19,3 +19,5 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
 
 GPT_KEY = os.getenv("GPT_KEY")
 GPT_GATEWAY_URL = os.getenv("GPT_GATEWAY_URL")
+
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")

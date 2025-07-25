@@ -4,7 +4,7 @@ import asyncio
 from config import MAIL_HOST, MAIL_USER, MAIL_PASSWORD, DB_PASSWORD, DB_DATABASE, DB_HOST, DB_PORT
 import json
 import asyncio
-from MailWorker.MailClient import MailClient
+from . import MailClient
 from manage import redis_client, db_client
 import time
 

@@ -132,6 +132,25 @@ services:
     restart: unless-stopped
     networks:
       - ai_mail_net
+  
+  tg_bot:
+    build:
+      context: .
+      dockerfile: mail_tg/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PROD_MODE: true
+      DB_HOST: postgres
+      DB_LOGIN: postgres
+      DB_PASSWORD: password
+      DB_PORT: 5432
+      DB_DATABASE: postgres
+    networks:
+      - ai_mail_net
 
 volumes:
   pgdata:
