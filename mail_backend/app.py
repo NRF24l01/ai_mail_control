@@ -24,18 +24,6 @@ import jwt
 SECRET_KEY = "supersecretkey"
 
 
-# app = FastAPI()
-#
-# # Добавляем CORS middleware ПЕРЕД AuthMiddleware
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],  # В продакшене замените на конкретные домены
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-#     expose_headers=["*"]  # Важно для CORS
-# )
-
 class MailResponse(BaseModel):
     from_user: str
     to_user: str
@@ -116,7 +104,7 @@ class AuthMiddleware:
                 return
         await self.app(scope, receive, send)
 
-# app.add_middleware(AuthMiddleware)
+
 
 
 from fastapi.middleware import Middleware
