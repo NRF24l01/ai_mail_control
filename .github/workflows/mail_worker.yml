@@ -1,0 +1,44 @@
+name: Build and Push Ai Worker
+
+on:
+  push:
+    paths:
+      - 'mail_backend/mail_worker.yml'
+      - '.github/workflows/backend.yml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'mail_backend/mail_worker.yml'
+      - '.github/workflows/backend.yml'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-backend:
+    name: Build Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout репозиторий
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Логин в GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Приведение имени репозитория к нижнему регистру
+        run: echo "REPO_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: MailWorker/Dockerfile
+          push: true
+          tags: ghcr.io/${{ env.REPO_NAME }}/mail-worker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
