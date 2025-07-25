@@ -77,10 +77,9 @@ class AiWorker:
         self.running = False
 
     async def run(self):
-        from models import run_migrations, init_db
+        from models import init_db
         await init_db()
-        await run_migrations()
-        print("Database initialized and migrations run")
+        print("Database initialized")
         
         await self.start_continuous_processing()
 

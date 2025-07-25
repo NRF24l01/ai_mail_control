@@ -1,0 +1,4 @@
+tortoise-orm~=0.25.1
+asyncpg~=0.30.0
+redis~=6.2.0
+aerich~=0.9.1

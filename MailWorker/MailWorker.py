@@ -51,13 +51,11 @@ class MailWorker:
     async def init(self):
         from models import run_migrations, init_db
         await init_db()
-        await run_migrations()
 
     async def run(self):
         try:
             from models import run_migrations, init_db
             await init_db()
-            await run_migrations()
             await self.fetch_and_store_new_emails()
         except Exception as e:
             self.logger.critical(f"Критическая ошибка в работе MailWorker: {e}")

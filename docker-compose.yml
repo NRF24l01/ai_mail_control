@@ -37,6 +37,8 @@ services:
       context: .
       dockerfile: MailWorker/Dockerfile
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
       redis:
@@ -70,6 +72,8 @@ services:
       retries: 5
       start_period: 10s
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     env_file:
@@ -111,6 +115,8 @@ services:
       context: .
       dockerfile: AiWorker/Dockerfile
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     env_file:
@@ -138,6 +144,8 @@ services:
       context: .
       dockerfile: mail_tg/Dockerfile
     depends_on:
+      migrator:
+        condition: service_completed_successfully
       postgres:
         condition: service_healthy
     env_file:
@@ -151,6 +159,27 @@ services:
       DB_DATABASE: postgres
     networks:
       - ai_mail_net
+  
+  migrator:
+    build:
+      context: .
+      dockerfile: migrator/Dockerfile
+    command: ./run_migrations.sh
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      PROD_MODE: true
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_LOGIN: postgres
+      DB_PASSWORD: password
+      DB_DATABASE: postgres
+    networks:
+      - ai_mail_net
+
 
 volumes:
   pgdata:
