@@ -4,13 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'mail_frontend/frontend.yml'
-      - '.github/workflows/**'
+      - 'mail_frontend/**'
+      - '.github/workflows/frontend.yml'
   pull_request:
     branches: [main]
     paths:
-      - 'mail_frontend/frontend.yml'
-      - '.github/workflows/**'
+      - 'mail_frontend/**'
+      - '.github/workflows/frontend.yml'
   workflow_dispatch:
     
 
