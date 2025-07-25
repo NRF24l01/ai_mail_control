@@ -40,3 +40,5 @@ jobs:
           file: AiWorker/Dockerfile
           push: true
           tags: ghcr.io/${{ env.REPO_NAME }}/mail-ai-worker
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
