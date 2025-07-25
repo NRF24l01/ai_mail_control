@@ -179,10 +179,13 @@ services:
       DB_DATABASE: postgres
     networks:
       - ai_mail_net
+    volumes:
+      - aerich_migrations:/app/models/migrations
 
 
 volumes:
   pgdata:
+  aerich_migrations:
 
 networks:
   ai_mail_net:
