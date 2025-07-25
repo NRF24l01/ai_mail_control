@@ -3,14 +3,14 @@ name: Build and Push Migrator
 on:
   push:
     paths:
-      - 'mail_backend/migrator.yml'
-      - '.github/workflows/backend.yml'
+      - 'migrator/**'
+      - '.github/workflows/migrator.yml'
     branches:
       - main
   pull_request:
     paths:
-      - 'mail_backend/migrator.yml'
-      - '.github/workflows/backend.yml'
+      - 'migrator/**'
+      - '.github/workflows/migrator.yml'
     branches:
       - main
   workflow_dispatch:

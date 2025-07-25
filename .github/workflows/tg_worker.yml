@@ -3,14 +3,14 @@ name: Build and Push Tg Worker
 on:
   push:
     paths:
-      - 'mail_backend/tg_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'mail_tg/**'
+      - '.github/workflows/tg_worker.yml'
     branches:
       - main
   pull_request:
     paths:
-      - 'mail_backend/tg_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'mail_tg/**'
+      - '.github/workflows/tg_worker.yml'
     branches:
       - main
   workflow_dispatch:

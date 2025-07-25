@@ -3,14 +3,14 @@ name: Build and Push Ai Worker
 on:
   push:
     paths:
-      - 'mail_backend/ai_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'AiWorker/**'
+      - '.github/workflows/ai_worker.yml'
     branches:
       - main
   pull_request:
     paths:
-      - 'mail_backend/ai_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'AiWorker/**'
+      - '.github/workflows/ai_worker.yml'
     branches:
       - main
   workflow_dispatch:

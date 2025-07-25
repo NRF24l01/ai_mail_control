@@ -3,14 +3,14 @@ name: Build and Push Mail Worker
 on:
   push:
     paths:
-      - 'mail_backend/mail_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'MailWorker/**'
+      - '.github/workflows/mail_worker.yml'
     branches:
       - main
   pull_request:
     paths:
-      - 'mail_backend/mail_worker.yml'
-      - '.github/workflows/backend.yml'
+      - 'MailWorker/**'
+      - '.github/workflows/mail_worker.yml'
     branches:
       - main
   workflow_dispatch:
