@@ -12,3 +12,9 @@ class Mail(models.Model):
     type = fields.CharField(max_length=32)
     recognized = fields.CharField(max_length=32, default=None, null=True)
     pre_generated_answer = fields.TextField(default=None, null=True)
+
+class MailNotification(models.Model):
+    uuid = fields.UUIDField(pk=True)
+    mail = fields.ForeignKeyField('models.Mail', related_name='notifications')
+    user_id = fields.BigIntField()  # Telegram user id
+    sent_at = fields.DatetimeField(auto_now_add=True)
