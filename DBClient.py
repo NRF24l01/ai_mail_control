@@ -1,4 +1,4 @@
-from models import Mail, Settings
+from models import Mail, Settings, User
 from tortoise.transactions import in_transaction
 
 
@@ -48,11 +48,14 @@ class DBClient:
             return settings
 
     async def email_exists(self, email):
-        """
-        Проверяет, есть ли письмо в базе по message_id.
-        Возвращает True, если письмо найдено, иначе False.
-        """
         async with in_transaction():
             message_id = email.get("message_id", "")
             exists = await Mail.filter(message_id=message_id).exists()
             return exists
+
+    async def add_user(self, email, password):
+        async with in_transaction():
+            user, created = await User.get_or_create(email=email)
+            if created:
+                user.password = password
+                await user.save()

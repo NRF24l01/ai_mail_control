@@ -270,27 +270,47 @@ async function loadMore() {
 }
 
 async function fakeFetchDialogs() {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
-        const url = `${backendUrl}/senders`
-        try {
-                const response = await fetch(url)
-                if (!response.ok) {
-                        return Promise.reject(new Error('Network error'))
-                }
-                const data = await response.json()
-                // data.senders is an array of objects: { uuid, email, unreadCount, lastMessage, lastMessageDate }
-                const dialogs = data.senders.map((sender, idx) => ({
-                        id: sender.uuid || (idx + 1),
-                        email: sender.email,
-                        unreadCount: sender.unreadCount,
-                        lastMessage: sender.lastMessage,
-                        lastMessageDate: sender.lastMessageDate
-                }))
-                return dialogs
-        } catch (err) {
-                error.value = err.message || 'Failed to load dialogs'
-                return []
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
+    const url = `${backendUrl}/senders`
+    const token = localStorage.getItem('authToken');
+    try {
+        console.log("Выполняется fetch по адресу:", url)
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        })
+
+        console.log("fetch response:", response)
+        if (response.status === 401) {
+            console.log("Получен 401, выполняем редирект на /")
+            window.location.replace("/")
+            return []
         }
+        if (!response.ok) {
+            const errorMsg = `Ошибка сети: ${response.status} ${response.statusText}`
+            error.value = errorMsg
+            console.log(errorMsg)
+            throw new Error(errorMsg)
+        }
+
+        const data = await response.json()
+        const dialogs = data.senders.map((sender, idx) => ({
+            id: sender.uuid || (idx + 1),
+            email: sender.email,
+            unreadCount: sender.unreadCount,
+            lastMessage: sender.lastMessage,
+            lastMessageDate: sender.lastMessageDate
+        }))
+        return dialogs
+    } catch (err) {
+        error.value = err.message || 'Failed to load dialogs'
+        console.error("Ошибка при получении диалогов:", err)
+        alert("Ошибка при получении диалогов: " + (err.message || err))
+        return []
+    }
 }
 
 function fakeFetchMoreDialogs() {

@@ -1,38 +1,41 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 from tortoise.expressions import Q
-from models.mail import Mail
-from config import POSTGRES_STR
+from models import Mail, User
+from config import POSTGRES_STR, MAIL_HOST
 from models.migrate import run_migrations
 import uvicorn
 import asyncio
 import os
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import uuid as uuid_module
 from models.settings import Settings
+import imaplib
+from tortoise.transactions import in_transaction
+from manage import db_client
+from fastapi.responses import JSONResponse
+from fastapi.middleware import Middleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
 
-app = FastAPI()
+SECRET_KEY = "supersecretkey"
 
-# CORS setup
-cors_mode = os.getenv("CORS_MODE", "")
-if cors_mode == "prod":
-    origins = ["https://mail.telepat.online"]
-else:
-    origins = ["*"]
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app = FastAPI()
+#
+# # Добавляем CORS middleware ПЕРЕД AuthMiddleware
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],  # В продакшене замените на конкретные домены
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+#     expose_headers=["*"]  # Важно для CORS
+# )
 
-# Response models for documentation
 class MailResponse(BaseModel):
     from_user: str
     to_user: str
@@ -77,6 +80,56 @@ class SettingsUpdateRequest(BaseModel):
 
 class RegenerateResponse(BaseModel):
     updated: int
+
+class AuthRequest(BaseModel):
+    email: str
+    password: str
+
+class AuthMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope["path"]
+            # Разрешаем OPTIONS-запросы и запросы к /auth и /ping без авторизации
+            if path in ["/auth", "/ping"] or scope["method"] == "OPTIONS":
+                await self.app(scope, receive, send)
+                return
+
+            # Проверка авторизации для остальных запросов
+            headers = dict(scope["headers"])
+            token = None
+            if b"authorization" in headers:
+                auth_header = headers[b"authorization"].decode()
+                if auth_header.startswith("Bearer "):
+                    token = auth_header.split("Bearer ", 1)[1]
+            if not token:
+                response = JSONResponse({"detail": "Unauthorized"}, status_code=401)
+                await response(scope, receive, send)
+                return
+            try:
+                jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            except Exception:
+                response = JSONResponse({"detail": "Invalid token"}, status_code=401)
+                await response(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+# app.add_middleware(AuthMiddleware)
+
+
+from fastapi.middleware import Middleware
+
+middleware = [
+    Middleware(CORSMiddleware, allow_origins=["*"],  # ← замените на конкретные домены в проде
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+        expose_headers=["*"]),
+    Middleware(AuthMiddleware)
+]
+app = FastAPI(middleware=middleware)
 
 @app.get("/ping", response_model=PingResponse)
 async def ping():
@@ -190,11 +243,31 @@ async def regenerate_sender(sender: str):
     )
     return {"updated": updated}
 
+@app.post("/auth")
+async def auth(data: AuthRequest):
+    email = data.email
+    password = data.password
+    try:
+        mail = imaplib.IMAP4_SSL(MAIL_HOST, timeout=20)
+        mail.login(email, password)
+        mail.logout()
+    except Exception as e:
+        # Возвращаем явный JSONResponse с кодом 401
+        return JSONResponse(
+            status_code=401,
+            content={"success": False, "detail": "Неверная почта или пароль"}
+        )
+
+    await db_client.add_user(email, password)
+    # Генерируем JWT токен
+    token = jwt.encode({"email": email}, SECRET_KEY, algorithm="HS256")
+    return {"success": True, "token": token}
+
 
 register_tortoise(
     app,
     db_url=POSTGRES_STR,
-    modules={"models": ["models.mail", "models.settings"]},
+    modules={"models": ["models.mail", "models.settings", "models.user"]},
     generate_schemas=False,
     add_exception_handlers=True,
 )

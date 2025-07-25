@@ -213,7 +213,19 @@ watch(() => [...formData.types], (newTypes, oldTypes) => {
 
 onMounted(async () => {
     try {
-        const res = await fetch(`${VITE_BACKEND_URL}/settings`)
+        const token = localStorage.getItem('authToken');
+        const res = await fetch(`${VITE_BACKEND_URL}/settings`, {
+          method: 'GET',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        })
+        if (res.status === 401) {
+            console.log("Получен 401, выполняем редирект на /")
+            window.location.replace("/")
+            return []
+        }
         if (res.ok) {
             const data = await res.json()
             Object.assign(formData, {

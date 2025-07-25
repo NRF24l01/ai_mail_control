@@ -115,8 +115,20 @@ const recognizedResult = ref(null)
 
 async function fetchMessages(chatId) {
     const url = `${import.meta.env.VITE_BACKEND_URL}/chat/${chatId}`
+    const token = localStorage.getItem('authToken');
     try {
-        const response = await fetch(url)
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': token ? `Bearer ${token}` : '',
+            'Content-Type': 'application/json'
+          }
+        })
+        if (response.status === 401) {
+            console.log("Получен 401, выполняем редирект на /")
+            window.location.replace("/")
+            return []
+        }
         if (!response.ok) throw new Error('Ошибка загрузки сообщений')
         const data = await response.json()
         // Преобразуем данные из MailResponse к формату сообщений чата

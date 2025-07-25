@@ -40,6 +40,7 @@
 
 <script setup>
 import { ref } from 'vue';
+import axios from 'axios';
 
 const email = ref('');
 const password = ref('');
@@ -69,18 +70,31 @@ function validate() {
 
 async function handleLogin() {
     loginError.value = "";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || ''
+    const url = `${backendUrl}/auth`
     if (!validate()) return;
     loading.value = true;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const result = Math.floor(Math.random() * 3);
-    if (result === 0) {
-        alert("Вы вошли!");
-        email.value = "";
-        password.value = "";
-    } else if (result === 1) {
-        loginError.value = "Не правильные данные для входа.";
-    } else {
-        loginError.value = "Сервер не отвечает, попробуйте позже.";
+    try {
+        const response = await axios.post(url, {
+            email: email.value,
+            password: password.value,
+        });
+        const data = response.data;
+        if (data.success && data.token) {
+            // Сохраняем токен в localStorage
+            localStorage.setItem('authToken', data.token);
+            email.value = "";
+            password.value = "";
+            window.location.href = "/dialogs";
+        } else {
+            loginError.value = "Не правильные данные для входа.";
+        }
+    } catch (error) {
+        if (error.response && error.response.status === 401) {
+            loginError.value = "Не правильные данные для входа.";
+        } else {
+            loginError.value = "Сервер не отвечает, попробуйте позже.";
+        }
     }
     loading.value = false;
 }
