@@ -3,13 +3,13 @@ name: Build and Push FastAPI backend
 on:
   push:
     paths:
-      - 'mail_backend/**'
+      - 'mail_backend/backend.yml'
       - '.github/workflows/backend.yml'
     branches:
       - main
   pull_request:
     paths:
-      - 'mail_backend/**'
+      - 'mail_backend/backend.yml'
       - '.github/workflows/backend.yml'
     branches:
       - main

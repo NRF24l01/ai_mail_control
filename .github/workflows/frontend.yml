@@ -4,12 +4,12 @@ on:
   push:
     branches: [main]
     paths:
-      - 'mail_frontend/**'
+      - 'mail_frontend/frontend.yml'
       - '.github/workflows/**'
   pull_request:
     branches: [main]
     paths:
-      - 'mail_frontend/**'
+      - 'mail_frontend/frontend.yml'
       - '.github/workflows/**'
   workflow_dispatch:
     
@@ -32,7 +32,7 @@ jobs:
         run: echo "REPO_NAME=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: mail_frontend/
           file: mail_frontend/Dockerfile
